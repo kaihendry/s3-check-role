@@ -1,7 +1,7 @@
 on: ["push"]
 
 jobs:
-  plan:
+  test:
     runs-on: ubuntu-latest
     permissions:
       id-token: write

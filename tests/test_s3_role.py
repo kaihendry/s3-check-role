@@ -1,14 +1,7 @@
 import boto3
 import pytest
-import json  # Added import
-from botocore.exceptions import ClientError  # Added import
-
-# Constants from Terraform/setup
-ROLE_ARN = "arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025"
-BUCKET_NAME = "s3-check-role-2025"
-OBJECT_KEY = "testdata.txt"
-OBJECT_ARN = f"arn:aws:s3:::{BUCKET_NAME}/{OBJECT_KEY}"
-BUCKET_ARN = f"arn:aws:s3:::{BUCKET_NAME}/*"  # Policy might use wildcard
+import json
+from botocore.exceptions import ClientError
 
 
 @pytest.fixture(scope="module")
@@ -24,30 +17,44 @@ def s3_client():
 
 
 @pytest.fixture(scope="module")
-def bucket_policy(s3_client):
+def bucket_policy(
+    s3_client, bucket_name
+):  # bucket_name fixture is now sourced from conftest.py
     """Fetches the S3 bucket policy."""
     try:
-        response = s3_client.get_bucket_policy(Bucket=BUCKET_NAME)
-        return response.get("Policy")  # Returns None if no policy key
+        response = s3_client.get_bucket_policy(Bucket=bucket_name)
+        # Ensure policy is returned as a string, not dict/None
+        policy_str = response.get("Policy")
+        return policy_str if policy_str else None
     except ClientError as e:
         if e.response["Error"]["Code"] == "NoSuchBucketPolicy":
-            print(f"No bucket policy found for {BUCKET_NAME}.")
+            print(f"No bucket policy found for {bucket_name}.")
             return None  # No policy exists
         else:
             print(f"Error fetching bucket policy: {e}")
             raise  # Re-raise other errors
 
 
-def test_readonly_role_can_read(iam_client, bucket_policy):
-    """Simulate GetObject action for the role and verify it's allowed."""
-    action = "s3:GetObject"
-    print(f"\nSimulating {action} for {ROLE_ARN} on {OBJECT_ARN}")
+@pytest.mark.parametrize(
+    "action, expected_decision",
+    [
+        ("s3:GetObject", "allowed"),
+        ("s3:PutObject", "denied"),  # Implicitly denied is okay
+        ("s3:DeleteObject", "denied"),  # Implicitly denied is okay
+    ],
+)
+def test_role_permissions(
+    iam_client, bucket_policy, role_arn, bucket_resource_arn, action, expected_decision
+):
+    """Simulate actions for the role and verify expected outcome."""
+    print(f"\nSimulating {action} for {role_arn} on {bucket_resource_arn}")
 
     simulation_params = {
-        "PolicySourceArn": ROLE_ARN,
+        "PolicySourceArn": role_arn,
         "ActionNames": [action],
-        "ResourceArns": [OBJECT_ARN],
+        "ResourceArns": [bucket_resource_arn],
     }
+    # Only add ResourcePolicy if it exists and is not None
     if bucket_policy:
         simulation_params["ResourcePolicy"] = bucket_policy
 
@@ -55,56 +62,15 @@ def test_readonly_role_can_read(iam_client, bucket_policy):
 
     assert len(response["EvaluationResults"]) == 1, "Expected one evaluation result"
     result = response["EvaluationResults"][0]
-    print(f"Simulation result: {result['EvalDecision']}")
+    actual_decision = result["EvalDecision"]
+    print(f"Simulation result: {actual_decision}")
 
-    assert (
-        result["EvalDecision"] == "allowed"
-    ), f"Expected {action} to be allowed, but got {result['EvalDecision']}"
-
-
-def test_readonly_role_cannot_write(iam_client, bucket_policy):
-    """Simulate PutObject action for the role and verify it's denied."""
-    action = "s3:PutObject"
-    print(f"\nSimulating {action} for {ROLE_ARN} on {OBJECT_ARN}")
-
-    simulation_params = {
-        "PolicySourceArn": ROLE_ARN,
-        "ActionNames": [action],
-        "ResourceArns": [OBJECT_ARN],
-    }
-    if bucket_policy:
-        simulation_params["ResourcePolicy"] = bucket_policy
-
-    response = iam_client.simulate_principal_policy(**simulation_params)
-
-    assert len(response["EvaluationResults"]) == 1, "Expected one evaluation result"
-    result = response["EvaluationResults"][0]
-    print(f"Simulation result: {result['EvalDecision']}")
-
-    assert (
-        result["EvalDecision"] != "allowed"
-    ), f"Expected {action} to be denied, but it was allowed"
-
-
-def test_readonly_role_cannot_delete(iam_client, bucket_policy):
-    """Simulate DeleteObject action for the role and verify it's denied."""
-    action = "s3:DeleteObject"
-    print(f"\nSimulating {action} for {ROLE_ARN} on {OBJECT_ARN}")
-
-    simulation_params = {
-        "PolicySourceArn": ROLE_ARN,
-        "ActionNames": [action],
-        "ResourceArns": [OBJECT_ARN],
-    }
-    if bucket_policy:
-        simulation_params["ResourcePolicy"] = bucket_policy
-
-    response = iam_client.simulate_principal_policy(**simulation_params)
-
-    assert len(response["EvaluationResults"]) == 1, "Expected one evaluation result"
-    result = response["EvaluationResults"][0]
-    print(f"Simulation result: {result['EvalDecision']}")
-
-    assert (
-        result["EvalDecision"] != "allowed"
-    ), f"Expected {action} to be denied, but it was allowed"
+    if expected_decision == "allowed":
+        assert (
+            actual_decision == "allowed"
+        ), f"Expected {action} to be allowed, but got {actual_decision}"
+    else:  # expected_decision == "denied"
+        # We check it's NOT allowed (could be explicitly or implicitly denied)
+        assert (
+            actual_decision != "allowed"
+        ), f"Expected {action} to be denied, but it was allowed"
