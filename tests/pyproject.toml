@@ -7,4 +7,5 @@ requires-python = ">=3.9"
 dependencies = [
     "boto3>=1.38.7",
     "pytest>=8.3.5",
+    "pytest-sugar>=1.0.0",
 ]

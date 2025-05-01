@@ -47,7 +47,6 @@ def test_role_permissions(
     iam_client, bucket_policy, role_arn, bucket_resource_arn, action, expected_decision
 ):
     """Simulate actions for the role and verify expected outcome."""
-    print(f"\nSimulating {action} for {role_arn} on {bucket_resource_arn}")
 
     simulation_params = {
         "PolicySourceArn": role_arn,
@@ -63,7 +62,6 @@ def test_role_permissions(
     assert len(response["EvaluationResults"]) == 1, "Expected one evaluation result"
     result = response["EvaluationResults"][0]
     actual_decision = result["EvalDecision"]
-    print(f"Simulation result: {actual_decision}")
 
     if expected_decision == "allowed":
         assert (
