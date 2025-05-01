@@ -2,4 +2,4 @@ ROLE_ARN ?= "arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025" #
 BUCKET_NAME ?= "s3-check-role-2025"
 
 test:
-	uv run pytest -v --tb=short --role-arn=$(ROLE_ARN) --bucket-name=$(BUCKET_NAME)
+	uv run pytest -v --tb=short --lf --junitxml=report.xml --role-arn=$(ROLE_ARN) --bucket-name=$(BUCKET_NAME)
