@@ -17,10 +17,8 @@ jobs:
         working-directory: tests
         run: make
 
-      - name: Publish Test Report
-        uses: dorny/test-reporter@v1
-        if: always()  # Ensure report is published even if tests fail
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
         with:
-          name: Pytest Results
-          path: tests/report.xml
-          reporter: pytest-junit
+          files: "report.xml"
