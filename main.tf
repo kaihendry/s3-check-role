@@ -27,6 +27,30 @@ resource "aws_s3_bucket" "secure_bucket" {
   bucket = var.bucket_name
 }
 
+resource "aws_s3_bucket_policy" "bucket_policy" {
+  bucket = aws_s3_bucket.secure_bucket.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowDPBarConsumerRead"
+        Effect = "Allow"
+        Principal = {
+          AWS = aws_iam_role.dp_bar_consumer_role.arn
+        }
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "${aws_s3_bucket.secure_bucket.arn}/bar/*",
+          aws_s3_bucket.secure_bucket.arn
+        ]
+      }
+    ]
+  })
+}
+
 data "aws_iam_policy_document" "s3_read_only_policy_doc" {
   statement {
     actions = [
@@ -77,6 +101,32 @@ resource "aws_iam_role_policy_attachment" "s3_read_only_attach" {
   policy_arn = aws_iam_policy.s3_read_only_policy.arn
 }
 
+# New role for bar consumer
+resource "aws_iam_role" "dp_bar_consumer_role" {
+  name = "dp-bar-consumer-rp"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          AWS = "*"
+        }
+        Condition = {
+          StringEquals = {
+            "aws:PrincipalOrgID" = var.aws_organization_id
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Description = "Role for read-only access to ${aws_s3_bucket.secure_bucket.id}/bar prefix via resource policy"
+  }
+}
+
 output "bucket_name" {
   description = "The name of the created S3 bucket."
   value       = aws_s3_bucket.secure_bucket.bucket
@@ -85,4 +135,9 @@ output "bucket_name" {
 output "role_arn" {
   description = "The ARN of the created IAM role."
   value       = aws_iam_role.s3_read_only_role.arn
+}
+
+output "dp_bar_consumer_role_arn" {
+  description = "The ARN of the bar consumer role (with access via resource policy)"
+  value       = aws_iam_role.dp_bar_consumer_role.arn
 }
