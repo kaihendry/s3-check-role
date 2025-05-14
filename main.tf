@@ -127,6 +127,27 @@ resource "aws_iam_role" "dp_bar_consumer_role" {
   }
 }
 
+# Test objects for validation
+resource "aws_s3_object" "test_file_foo" {
+  bucket  = aws_s3_bucket.secure_bucket.id
+  key     = "foo/test.txt"
+  content = "This is a test file in foo prefix - ${formatdate("YYYY-MM-DD", timestamp())}"
+
+  tags = {
+    Description = "Test file in foo prefix for access validation"
+  }
+}
+
+resource "aws_s3_object" "test_file_bar" {
+  bucket  = aws_s3_bucket.secure_bucket.id
+  key     = "bar/test.txt"
+  content = "This is a test file in bar prefix - ${formatdate("YYYY-MM-DD", timestamp())}"
+
+  tags = {
+    Description = "Test file in bar prefix for access validation"
+  }
+}
+
 output "bucket_name" {
   description = "The name of the created S3 bucket."
   value       = aws_s3_bucket.secure_bucket.bucket
