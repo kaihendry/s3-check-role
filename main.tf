@@ -35,7 +35,7 @@ data "aws_iam_policy_document" "s3_read_only_policy_doc" {
     ]
     resources = [
       aws_s3_bucket.secure_bucket.arn,
-      "${aws_s3_bucket.secure_bucket.arn}/*"
+      "${aws_s3_bucket.secure_bucket.arn}/foo/*"
     ]
     effect = "Allow"
   }

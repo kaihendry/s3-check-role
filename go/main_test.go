@@ -49,10 +49,17 @@ func TestSimulatePrincipalPolicy(t *testing.T) {
 		expectedResult string
 	}{
 		{
-			name:           "Allow GetObject",
+			name:           "GetObject wrong prefix",
 			roleArn:        "arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025",
 			action:         "s3:GetObject",
 			resourceArn:    "arn:aws:s3:::s3-check-role-2025/example.txt",
+			expectedResult: "implicitDeny",
+		},
+		{
+			name:           "GetObject correct prefix",
+			roleArn:        "arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025",
+			action:         "s3:GetObject",
+			resourceArn:    "arn:aws:s3:::s3-check-role-2025/foo/example.txt",
 			expectedResult: "allowed",
 		},
 		{
