@@ -14,3 +14,8 @@ plan: .terraform
 
 destroy: .terraform
 	terraform destroy
+
+inspect-access:
+	aws s3api get-bucket-policy --bucket s3-check-role-2025 | jq
+	aws iam list-attached-role-policies --role-name S3ReadOnlyRole-s3-check-role-2025
+	aws iam get-policy-version --policy-arn $$(aws iam list-attached-role-policies --role-name S3ReadOnlyRole-s3-check-role-2025 --query 'AttachedPolicies[0].PolicyArn' --output text) --version-id $$(aws iam get-policy --policy-arn $$(aws iam list-attached-role-policies --role-name S3ReadOnlyRole-s3-check-role-2025 --query 'AttachedPolicies[0].PolicyArn' --output text) --query 'Policy.DefaultVersionId' --output text) | jq
