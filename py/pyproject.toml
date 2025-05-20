@@ -1,0 +1,15 @@
+[project]
+name = "py"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "boto3>=1.34.0",
+    "botocore>=1.34.0"
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+]

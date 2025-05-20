@@ -1,0 +1,23 @@
+name: Python Tests
+
+on: ["push"]
+
+permissions:
+  checks: write
+  pull-requests: write
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+            role-to-assume: arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ
+            aws-region: eu-west-2
+      - uses: astral-sh/setup-uv@v5
+      - name: test
+        working-directory: py
+        run: uv run pytest
