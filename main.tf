@@ -121,18 +121,26 @@ resource "aws_iam_role_policy" "a_role_access_point_readonly" {
   role = aws_iam_role.a_role.id
 
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          aws_s3_access_point.secure_bucket_access_point.arn,
-          "${aws_s3_access_point.secure_bucket_access_point.arn}/object/*"
-        ]
+        Sid      = "AllowListBucketViaAccessPoint",
+        Effect   = "Allow",
+        Action   = "s3:ListBucket",
+        Resource = aws_s3_bucket.secure_bucket.arn, // Allow listing on the bucket itself
+        Condition = {
+          StringEquals = {
+            // But only if the request is made via this specific access point
+            "s3:DataAccessPointArn" = aws_s3_access_point.secure_bucket_access_point.arn
+          }
+        }
+      },
+      {
+        Sid    = "AllowGetObjectViaAccessPointForFooPrefix",
+        Effect = "Allow",
+        Action = "s3:GetObject",
+        // Resource for GetObject is objects under foo/* via the access point
+        Resource = "${aws_s3_access_point.secure_bucket_access_point.arn}/object/foo/*"
       }
     ]
   })

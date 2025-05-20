@@ -22,9 +22,7 @@ func getS3ClientForRole(ctx context.Context, roleArn string) (*s3.Client, error)
 	roleCfg := cfg.Copy()
 	roleCfg.Credentials = aws.NewCredentialsCache(provider)
 
-	return s3.NewFromConfig(roleCfg, func(o *s3.Options) {
-		o.UsePathStyle = true
-	}), nil
+	return s3.NewFromConfig(roleCfg), nil
 }
 
 func TestS3Access(t *testing.T) {
@@ -109,6 +107,18 @@ func TestS3Access(t *testing.T) {
 				return err
 			},
 			shouldSucceed: false,
+		},
+		{
+			name:    "List via access point should succeed",
+			roleArn: "arn:aws:iam::407461997746:role/foo-via-access-point",
+			operation: func(ctx context.Context, client *s3.Client) error {
+				accessPointAlias := "s3-check-role-2025-a-ns86askpr5cwp5kqkmjrmznbmpjaaeuw2b-s3alias"
+				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+					Bucket: aws.String(accessPointAlias),
+				})
+				return err
+			},
+			shouldSucceed: true,
 		},
 	}
 
