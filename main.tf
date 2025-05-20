@@ -135,13 +135,13 @@ resource "aws_iam_role_policy" "a_role_access_point_readonly" {
         }
       },
       {
-        Sid      = "AllowGetObjectOnBucketViaAccessPointForFooPrefix",
+        Sid      = "AllowGetObjectOnBucketViaAccessPoint", // SID updated for clarity
         Effect   = "Allow",
         Action   = "s3:GetObject",
-        Resource = "${aws_s3_bucket.secure_bucket.arn}/foo/*", // Target bucket object ARN
-        Condition = {                                          // Ensure this is only allowed when via the correct access point
+        Resource = "${aws_s3_bucket.secure_bucket.arn}/*", // Broader resource, allows GetObject on any object in the bucket
+        Condition = {
           StringEquals = {
-            "s3:DataAccessPointArn" = aws_s3_access_point.secure_bucket_access_point.arn
+            "s3:DataAccessPointArn" = aws_s3_access_point.secure_bucket_access_point.arn // This condition is still key
           }
         }
       }
