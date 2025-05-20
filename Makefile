@@ -19,3 +19,6 @@ destroy: .terraform
 inspect-access:
 	aws s3api get-bucket-policy --bucket s3-check-role-2025 --query Policy --output text | jq .
 	aws s3control list-access-points --account-id $$(aws sts get-caller-identity --query Account --output text)
+	aws s3control get-access-point-policy \
+  		--account-id $$(aws sts get-caller-identity --query Account --output text) \
+  		--name s3-check-role-2025-ap | jq -r .Policy | jq .
