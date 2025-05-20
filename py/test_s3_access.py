@@ -2,7 +2,6 @@ import boto3
 import pytest
 from botocore.config import Config
 from typing import Callable, Any
-import os
 from dataclasses import dataclass
 from botocore.exceptions import ClientError
 
@@ -113,7 +112,7 @@ def test_s3_access(test_case: S3Test, s3_clients: dict):
     try:
         test_case.operation(client)
         if not test_case.should_succeed:
-            pytest.fail(f"Expected operation to fail but it succeeded")
+            pytest.fail("Expected operation to fail but it succeeded")
     except ClientError as e:
         if test_case.should_succeed:
             pytest.fail(f"Expected operation to succeed but got error: {e}")
