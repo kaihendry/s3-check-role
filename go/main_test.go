@@ -12,103 +12,151 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
-func testS3Access(t *testing.T, roleArn string, bucketName string) {
-	ctx := context.TODO()
+func getS3ClientForRole(ctx context.Context, roleArn string) (*s3.Client, error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		t.Fatalf("failed to load configuration, %v", err)
+		return nil, err
 	}
 
-	// Create STS client
 	stsClient := sts.NewFromConfig(cfg)
-
-	// Create credentials provider for assuming the role
 	provider := stscreds.NewAssumeRoleProvider(stsClient, roleArn)
-
-	// Create new config with role credentials
 	roleCfg := cfg.Copy()
 	roleCfg.Credentials = aws.NewCredentialsCache(provider)
 
-	// Create S3 client with role credentials and proper endpoint resolution mode
-	s3Client := s3.NewFromConfig(roleCfg, func(o *s3.Options) {
+	return s3.NewFromConfig(roleCfg, func(o *s3.Options) {
 		o.UsePathStyle = true
-	})
+	}), nil
+}
+
+func TestS3Access(t *testing.T) {
+	ctx := context.TODO()
+	bucketName := "s3-check-role-2025"
 
 	tests := []struct {
 		name          string
-		operation     func() error
+		roleArn       string
+		operation     func(context.Context, *s3.Client) error
 		shouldSucceed bool
 	}{
 		{
-			name: "ListBucket",
-			operation: func() error {
-				_, err := s3Client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+			name:    "S3ReadOnlyRole - List Bucket Contents",
+			roleArn: "arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025",
+			operation: func(ctx context.Context, client *s3.Client) error {
+				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 					Bucket: aws.String(bucketName),
 				})
 				return err
 			},
-			shouldSucceed: true, // Both roles should be able to list
+			shouldSucceed: true,
 		},
 		{
-			name: "GetObject from foo/",
-			operation: func() error {
-				_, err := s3Client.GetObject(ctx, &s3.GetObjectInput{
+			name:    "S3ReadOnlyRole - Get Object from foo/",
+			roleArn: "arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025",
+			operation: func(ctx context.Context, client *s3.Client) error {
+				_, err := client.GetObject(ctx, &s3.GetObjectInput{
 					Bucket: aws.String(bucketName),
 					Key:    aws.String("foo/test.txt"),
 				})
 				return err
 			},
-			shouldSucceed: strings.Contains(roleArn, "S3ReadOnlyRole"), // Only S3ReadOnlyRole should access foo/
+			shouldSucceed: true,
 		},
 		{
-			name: "GetObject from bar/",
-			operation: func() error {
-				_, err := s3Client.GetObject(ctx, &s3.GetObjectInput{
+			name:    "S3ReadOnlyRole - Get Object from bar/",
+			roleArn: "arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025",
+			operation: func(ctx context.Context, client *s3.Client) error {
+				_, err := client.GetObject(ctx, &s3.GetObjectInput{
 					Bucket: aws.String(bucketName),
 					Key:    aws.String("bar/test.txt"),
 				})
 				return err
 			},
-			shouldSucceed: strings.Contains(roleArn, "dp-bar-consumer-rp"), // Only dp-bar-consumer-rp should access bar/
+			shouldSucceed: false,
 		},
 		{
-			name: "PutObject attempt",
-			operation: func() error {
-				_, err := s3Client.PutObject(ctx, &s3.PutObjectInput{
+			name:    "S3ReadOnlyRole - Put Object Attempt to foo/",
+			roleArn: "arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025",
+			operation: func(ctx context.Context, client *s3.Client) error {
+				_, err := client.PutObject(ctx, &s3.PutObjectInput{
 					Bucket: aws.String(bucketName),
-					Key:    aws.String("test.txt"),
+					Key:    aws.String("foo/test.txt"),
 					Body:   strings.NewReader("test"),
 				})
 				return err
 			},
-			shouldSucceed: false, // Neither role should be able to write
+			shouldSucceed: false,
+		},
+		{
+			name:    "BarConsumerRole - List Bucket Contents",
+			roleArn: "arn:aws:iam::407461997746:role/dp-bar-consumer-rp",
+			operation: func(ctx context.Context, client *s3.Client) error {
+				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+					Bucket: aws.String(bucketName),
+				})
+				return err
+			},
+			shouldSucceed: true,
+		},
+		{
+			name:    "BarConsumerRole - Get Object from bar/",
+			roleArn: "arn:aws:iam::407461997746:role/dp-bar-consumer-rp",
+			operation: func(ctx context.Context, client *s3.Client) error {
+				_, err := client.GetObject(ctx, &s3.GetObjectInput{
+					Bucket: aws.String(bucketName),
+					Key:    aws.String("bar/test.txt"),
+				})
+				return err
+			},
+			shouldSucceed: true,
+		},
+		{
+			name:    "BarConsumerRole - Get Object from foo/",
+			roleArn: "arn:aws:iam::407461997746:role/dp-bar-consumer-rp",
+			operation: func(ctx context.Context, client *s3.Client) error {
+				_, err := client.GetObject(ctx, &s3.GetObjectInput{
+					Bucket: aws.String(bucketName),
+					Key:    aws.String("foo/test.txt"),
+				})
+				return err
+			},
+			shouldSucceed: false,
+		},
+		{
+			name:    "BarConsumerRole - Put Object Attempt to bar/",
+			roleArn: "arn:aws:iam::407461997746:role/dp-bar-consumer-rp",
+			operation: func(ctx context.Context, client *s3.Client) error {
+				_, err := client.PutObject(ctx, &s3.PutObjectInput{
+					Bucket: aws.String(bucketName),
+					Key:    aws.String("bar/test.txt"),
+					Body:   strings.NewReader("test"),
+				})
+				return err
+			},
+			shouldSucceed: false,
 		},
 	}
 
+	clients := make(map[string]*s3.Client)
 	for _, tt := range tests {
-		testName := roleArn + " - " + tt.name
-		t.Run(testName, func(t *testing.T) {
-			err := tt.operation()
+		t.Run(tt.name, func(t *testing.T) {
+			// Reuse client for same role
+			client, exists := clients[tt.roleArn]
+			if !exists {
+				var err error
+				client, err = getS3ClientForRole(ctx, tt.roleArn)
+				if err != nil {
+					t.Fatalf("Failed to create S3 client for role ARN %s: %v", tt.roleArn, err)
+				}
+				clients[tt.roleArn] = client
+			}
+
+			err := tt.operation(ctx, client)
 			if tt.shouldSucceed && err != nil {
-				t.Errorf("%s: expected success, got error: %v", tt.name, err)
+				t.Errorf("Expected success but got error: %v", err)
 			}
 			if !tt.shouldSucceed && err == nil {
-				t.Errorf("%s: expected error, got success", tt.name)
+				t.Errorf("Expected error but operation succeeded")
 			}
-		})
-	}
-}
-
-func TestActualS3Access(t *testing.T) {
-	bucketName := "s3-check-role-2025"
-	roles := []string{
-		"arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025",
-		"arn:aws:iam::407461997746:role/dp-bar-consumer-rp",
-	}
-
-	for _, roleArn := range roles {
-		t.Run(roleArn, func(t *testing.T) {
-			testS3Access(t, roleArn, bucketName)
 		})
 	}
 }
