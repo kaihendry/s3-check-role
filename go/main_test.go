@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -39,79 +38,32 @@ func TestS3Access(t *testing.T) {
 		shouldSucceed bool
 	}{
 		{
-			name:    "S3ReadOnlyRole - List Bucket Contents",
-			roleArn: "arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025",
+			name:    "List top level Bucket Contents should fail",
+			roleArn: "arn:aws:iam::407461997746:role/foo-via-bucket-policy",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 					Bucket: aws.String(bucketName),
 				})
 				return err
 			},
-			shouldSucceed: true,
-		},
-		{
-			name:    "S3ReadOnlyRole - Get Object from foo/",
-			roleArn: "arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025",
-			operation: func(ctx context.Context, client *s3.Client) error {
-				_, err := client.GetObject(ctx, &s3.GetObjectInput{
-					Bucket: aws.String(bucketName),
-					Key:    aws.String("foo/test.txt"),
-				})
-				return err
-			},
-			shouldSucceed: true,
-		},
-		{
-			name:    "S3ReadOnlyRole - Get Object from bar/",
-			roleArn: "arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025",
-			operation: func(ctx context.Context, client *s3.Client) error {
-				_, err := client.GetObject(ctx, &s3.GetObjectInput{
-					Bucket: aws.String(bucketName),
-					Key:    aws.String("bar/test.txt"),
-				})
-				return err
-			},
 			shouldSucceed: false,
 		},
 		{
-			name:    "S3ReadOnlyRole - Put Object Attempt to foo/",
-			roleArn: "arn:aws:iam::407461997746:role/S3ReadOnlyRole-s3-check-role-2025",
-			operation: func(ctx context.Context, client *s3.Client) error {
-				_, err := client.PutObject(ctx, &s3.PutObjectInput{
-					Bucket: aws.String(bucketName),
-					Key:    aws.String("foo/test.txt"),
-					Body:   strings.NewReader("test"),
-				})
-				return err
-			},
-			shouldSucceed: false,
-		},
-		{
-			name:    "BarConsumerRole - List Bucket Contents",
-			roleArn: "arn:aws:iam::407461997746:role/dp-bar-consumer-rp",
+			name:    "Listing /foo/ should succeed",
+			roleArn: "arn:aws:iam::407461997746:role/foo-via-bucket-policy",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 					Bucket: aws.String(bucketName),
+					Prefix: aws.String("foo/"),
 				})
 				return err
 			},
 			shouldSucceed: true,
 		},
+		// check if role can get foo/test.txt
 		{
-			name:    "BarConsumerRole - Get Object from bar/",
-			roleArn: "arn:aws:iam::407461997746:role/dp-bar-consumer-rp",
-			operation: func(ctx context.Context, client *s3.Client) error {
-				_, err := client.GetObject(ctx, &s3.GetObjectInput{
-					Bucket: aws.String(bucketName),
-					Key:    aws.String("bar/test.txt"),
-				})
-				return err
-			},
-			shouldSucceed: true,
-		},
-		{
-			name:    "BarConsumerRole - Get Object from foo/",
-			roleArn: "arn:aws:iam::407461997746:role/dp-bar-consumer-rp",
+			name:    "Get /foo/test.txt should succeed",
+			roleArn: "arn:aws:iam::407461997746:role/foo-via-bucket-policy",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.GetObject(ctx, &s3.GetObjectInput{
 					Bucket: aws.String(bucketName),
@@ -119,20 +71,7 @@ func TestS3Access(t *testing.T) {
 				})
 				return err
 			},
-			shouldSucceed: false,
-		},
-		{
-			name:    "BarConsumerRole - Put Object Attempt to bar/",
-			roleArn: "arn:aws:iam::407461997746:role/dp-bar-consumer-rp",
-			operation: func(ctx context.Context, client *s3.Client) error {
-				_, err := client.PutObject(ctx, &s3.PutObjectInput{
-					Bucket: aws.String(bucketName),
-					Key:    aws.String("bar/test.txt"),
-					Body:   strings.NewReader("test"),
-				})
-				return err
-			},
-			shouldSucceed: false,
+			shouldSucceed: true,
 		},
 	}
 

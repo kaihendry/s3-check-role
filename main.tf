@@ -27,49 +27,42 @@ resource "aws_s3_bucket" "secure_bucket" {
   bucket = var.bucket_name
 }
 
-resource "aws_s3_bucket_policy" "bucket_policy" {
+# on secure_bucket resource policy allow foo-via-bucket-policy role to access foo/*
+resource "aws_s3_bucket_policy" "secure_bucket_policy" {
   bucket = aws_s3_bucket.secure_bucket.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "AllowDPBarConsumerRead"
-        Effect = "Allow"
-        Principal = {
-          AWS = aws_iam_role.dp_bar_consumer_role.arn
-        }
-        Action = [
-          "s3:GetObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          "${aws_s3_bucket.secure_bucket.arn}/bar/*",
-          aws_s3_bucket.secure_bucket.arn
-        ]
-      }
-    ]
-  })
+
+  policy = data.aws_iam_policy_document.bucket_policy.json
 }
 
-data "aws_iam_policy_document" "s3_read_only_policy_doc" {
+data "aws_iam_policy_document" "bucket_policy" {
+  # allow list bucket only for foo/* prefix
   statement {
-    actions = [
-      "s3:GetObject",
-      "s3:ListBucket"
-    ]
+    actions = ["s3:ListBucket"]
     resources = [
-      aws_s3_bucket.secure_bucket.arn,
+      aws_s3_bucket.secure_bucket.arn
+    ]
+    principals {
+      type        = "AWS"
+      identifiers = [aws_iam_role.b_role.arn]
+    }
+    condition {
+      test     = "StringLike"
+      variable = "s3:prefix"
+      values   = ["foo/*"]
+    }
+  }
+  statement {
+    actions = ["s3:GetObject"]
+    resources = [
       "${aws_s3_bucket.secure_bucket.arn}/foo/*"
     ]
-    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = [aws_iam_role.b_role.arn]
+    }
   }
 }
 
-resource "aws_iam_policy" "s3_read_only_policy" {
-  name        = "S3ReadOnlyAccessPolicy-${aws_s3_bucket.secure_bucket.id}"
-  description = "Policy that grants read-only access to a specific S3 bucket"
-  policy      = data.aws_iam_policy_document.s3_read_only_policy_doc.json
-}
 
 data "aws_iam_policy_document" "assume_role_policy_doc" {
   statement {
@@ -86,46 +79,18 @@ data "aws_iam_policy_document" "assume_role_policy_doc" {
     effect = "Allow"
   }
 }
-
-resource "aws_iam_role" "s3_read_only_role" {
-  name               = "S3ReadOnlyRole-${aws_s3_bucket.secure_bucket.id}"
+# Role that can access foo/test.txt via S3 Access Point
+resource "aws_iam_role" "a_role" {
+  name               = "foo-via-access-point"
   assume_role_policy = data.aws_iam_policy_document.assume_role_policy_doc.json
-
-  tags = {
-    Description = "Role for read-only access to ${aws_s3_bucket.secure_bucket.id}"
-  }
 }
 
-resource "aws_iam_role_policy_attachment" "s3_read_only_attach" {
-  role       = aws_iam_role.s3_read_only_role.name
-  policy_arn = aws_iam_policy.s3_read_only_policy.arn
+# Role that can access foo/test.txt via bucket policy
+resource "aws_iam_role" "b_role" {
+  name               = "foo-via-bucket-policy"
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy_doc.json
 }
 
-# New role for bar consumer
-resource "aws_iam_role" "dp_bar_consumer_role" {
-  name = "dp-bar-consumer-rp"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          AWS = "*"
-        }
-        Condition = {
-          StringEquals = {
-            "aws:PrincipalOrgID" = var.aws_organization_id
-          }
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Description = "Role for read-only access to ${aws_s3_bucket.secure_bucket.id}/bar prefix via resource policy"
-  }
-}
 
 # Test objects for validation
 resource "aws_s3_object" "test_file_foo" {
@@ -138,27 +103,14 @@ resource "aws_s3_object" "test_file_foo" {
   }
 }
 
-resource "aws_s3_object" "test_file_bar" {
-  bucket  = aws_s3_bucket.secure_bucket.id
-  key     = "bar/test.txt"
-  content = "This is a test file in bar prefix - ${formatdate("YYYY-MM-DD", timestamp())}"
-
-  tags = {
-    Description = "Test file in bar prefix for access validation"
-  }
-}
-
 output "bucket_name" {
-  description = "The name of the created S3 bucket."
-  value       = aws_s3_bucket.secure_bucket.bucket
+  value = aws_s3_bucket.secure_bucket.bucket
 }
 
-output "role_arn" {
-  description = "The ARN of the created IAM role."
-  value       = aws_iam_role.s3_read_only_role.arn
+output "a_role_arn" {
+  value = aws_iam_role.a_role.arn
 }
 
-output "dp_bar_consumer_role_arn" {
-  description = "The ARN of the bar consumer role (with access via resource policy)"
-  value       = aws_iam_role.dp_bar_consumer_role.arn
+output "b_role_arn" {
+  value = aws_iam_role.b_role.arn
 }
