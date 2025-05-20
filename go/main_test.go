@@ -120,6 +120,19 @@ func TestS3Access(t *testing.T) {
 			},
 			shouldSucceed: true,
 		},
+		{
+			name:    "Get /foo/test.txt via access point should succeed",
+			roleArn: "arn:aws:iam::407461997746:role/foo-via-access-point",
+			operation: func(ctx context.Context, client *s3.Client) error {
+				accessPointAlias := "s3-check-role-2025-a-ns86askpr5cwp5kqkmjrmznbmpjaaeuw2b-s3alias"
+				_, err := client.GetObject(ctx, &s3.GetObjectInput{
+					Bucket: aws.String(accessPointAlias),
+					Key:    aws.String("foo/test.txt"),
+				})
+				return err
+			},
+			shouldSucceed: true,
+		},
 	}
 
 	clients := make(map[string]*s3.Client)
