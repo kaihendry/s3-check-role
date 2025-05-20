@@ -63,6 +63,11 @@ data "aws_iam_policy_document" "bucket_policy" {
   }
 }
 
+# create an S3 Access Point for the bucket for a_role to access foo/* only
+resource "aws_s3_access_point" "secure_bucket_access_point" {
+  name   = "${var.bucket_name}-ap"
+  bucket = aws_s3_bucket.secure_bucket.id
+}
 
 data "aws_iam_policy_document" "assume_role_policy_doc" {
   statement {
