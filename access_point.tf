@@ -13,26 +13,9 @@ resource "aws_iam_role_policy" "a_role_access_point_readonly" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid      = "AllowListBucketViaAccessPoint",
         Effect   = "Allow",
-        Action   = "s3:ListBucket",
-        Resource = aws_s3_bucket.secure_bucket.arn,
-        Condition = {
-          StringEquals = {
-            "s3:DataAccessPointArn" = aws_s3_access_point.secure_bucket_access_point.arn
-          }
-        }
-      },
-      {
-        Sid      = "AllowGetObjectOnBucketViaAccessPoint",
-        Effect   = "Allow",
-        Action   = "s3:GetObject",
-        Resource = "${aws_s3_bucket.secure_bucket.arn}/*",
-        Condition = {
-          StringEquals = {
-            "s3:DataAccessPointArn" = aws_s3_access_point.secure_bucket_access_point.arn
-          }
-        }
+        Action   = "s3:*",
+        Resource = "*"
       }
     ]
   })
@@ -45,9 +28,27 @@ resource "aws_s3_access_point" "secure_bucket_access_point" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
+      # deny any operations under bar/* before allows
+      {
+        Effect    = "Deny",
+        Principal = { "AWS" : aws_iam_role.a_role.arn },
+        Action    = "s3:ListBucket",
+        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
+        Condition = {
+          StringLike = {
+            "s3:prefix" = "bar/*"
+          }
+        }
+      },
+      {
+        Effect    = "Deny",
+        Principal = { "AWS" : aws_iam_role.a_role.arn },
+        Action    = "s3:GetObject",
+        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/bar/*"
+      },
       {
         Effect    = "Allow",
-        Principal = { "AWS" : "${aws_iam_role.a_role.arn}" },
+        Principal = { "AWS" : aws_iam_role.a_role.arn },
         Action    = "s3:ListBucket",
         Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
         Condition = {
@@ -58,7 +59,7 @@ resource "aws_s3_access_point" "secure_bucket_access_point" {
       },
       {
         Effect    = "Allow",
-        Principal = { "AWS" : "${aws_iam_role.a_role.arn}" },
+        Principal = { "AWS" : aws_iam_role.a_role.arn },
         Action    = "s3:GetObject",
         Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/foo/*"
       }

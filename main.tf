@@ -55,6 +55,16 @@ resource "aws_s3_object" "test_file_foo" {
   }
 }
 
+resource "aws_s3_object" "test_file_bar" {
+  bucket  = aws_s3_bucket.secure_bucket.id
+  key     = "bar/test.txt"
+  content = "This is a test file in bar prefix - ${formatdate("YYYY-MM-DD", timestamp())}"
+
+  tags = {
+    Description = "Test file in bar prefix for access validation"
+  }
+}
+
 output "bucket_name" {
   value = aws_s3_bucket.secure_bucket.bucket
 }
