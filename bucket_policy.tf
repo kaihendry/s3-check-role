@@ -6,10 +6,15 @@ resource "aws_s3_bucket_policy" "secure_bucket_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid       = "AllowAdminAccess",
-        Effect    = "Allow",
-        Principal = { AWS = "arn:aws:iam::407461997746:user/hendry" },
-        Action    = "s3:*",
+        Sid    = "AllowAdminAccess",
+        Effect = "Allow",
+        Principal = {
+          AWS = [
+            "arn:aws:iam::407461997746:user/hendry",
+            "arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ"
+          ]
+        },
+        Action = "s3:*",
         Resource = [
           aws_s3_bucket.secure_bucket.arn,
           "${aws_s3_bucket.secure_bucket.arn}/*"
@@ -51,7 +56,10 @@ resource "aws_s3_bucket_policy" "secure_bucket_policy" {
         ],
         Condition = {
           StringNotEquals = {
-            "aws:PrincipalArn" = "arn:aws:iam::407461997746:user/hendry"
+            "aws:PrincipalArn" = [
+              "arn:aws:iam::407461997746:user/hendry",
+              "arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ"
+            ]
           },
           Null = {
             "s3:DataAccessPointArn" = "true"
