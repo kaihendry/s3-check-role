@@ -31,7 +31,7 @@ func TestAccessPointS3Access(t *testing.T) {
 			expectAccessErr: true,
 		},
 		{
-			name: "Listing /foo/ directly from bucket should fail",
+			name: "Listing foo/ directly from bucket should fail",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 					Bucket: aws.String(bucketName),
@@ -42,7 +42,7 @@ func TestAccessPointS3Access(t *testing.T) {
 			expectAccessErr: true,
 		},
 		{
-			name: "Get /foo/test.txt directly from bucket should fail",
+			name: "Get foo/test.txt directly from bucket should fail",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.GetObject(ctx, &s3.GetObjectInput{
 					Bucket: aws.String(bucketName),
@@ -53,7 +53,7 @@ func TestAccessPointS3Access(t *testing.T) {
 			expectAccessErr: true,
 		},
 		{
-			name: "List /foo via access point should succeed",
+			name: "List foo/ via access point should succeed",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 					Bucket: aws.String(accessPointAlias),
@@ -64,7 +64,7 @@ func TestAccessPointS3Access(t *testing.T) {
 			expectAccessErr: false,
 		},
 		{
-			name: "Get /foo/test.txt via access point should succeed",
+			name: "Get foo/test.txt via access point should succeed",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.GetObject(ctx, &s3.GetObjectInput{
 					Bucket: aws.String(accessPointAlias),
@@ -75,7 +75,7 @@ func TestAccessPointS3Access(t *testing.T) {
 			expectAccessErr: false,
 		},
 		{
-			name: "List /bar/ via access point should fail",
+			name: "List bar/ via access point should fail",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 					Bucket: aws.String(accessPointAlias),
@@ -86,7 +86,7 @@ func TestAccessPointS3Access(t *testing.T) {
 			expectAccessErr: true,
 		},
 		{
-			name: "Get /bar/test.txt via access point should fail",
+			name: "Get bar/test.txt via access point should fail",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.GetObject(ctx, &s3.GetObjectInput{
 					Bucket: aws.String(accessPointAlias),

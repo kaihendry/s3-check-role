@@ -23,42 +23,42 @@ def s3_client():
             expect_access_err=True,
         ),
         S3Test(
-            name="Listing /foo/ directly from bucket should fail",
+            name="Listing foo/ directly from bucket should fail",
             operation=lambda client: client.list_objects_v2(
                 Bucket=BUCKET_NAME, Prefix="foo/"
             ),
             expect_access_err=True,
         ),
         S3Test(
-            name="Get /foo/test.txt directly from bucket should fail",
+            name="Get foo/test.txt directly from bucket should fail",
             operation=lambda client: client.get_object(
                 Bucket=BUCKET_NAME, Key="foo/test.txt"
             ),
             expect_access_err=True,
         ),
         S3Test(
-            name="List /foo via access point should succeed",
+            name="List foo/ via access point should succeed",
             operation=lambda client: client.list_objects_v2(
                 Bucket=ACCESS_POINT_ALIAS, Prefix="foo/"
             ),
             expect_access_err=False,
         ),
         S3Test(
-            name="Get /foo/test.txt via access point should succeed",
+            name="Get foo/test.txt via access point should succeed",
             operation=lambda client: client.get_object(
                 Bucket=ACCESS_POINT_ALIAS, Key="foo/test.txt"
             ),
             expect_access_err=False,
         ),
         S3Test(
-            name="List /bar/ via access point should fail",
+            name="List bar/ via access point should fail",
             operation=lambda client: client.list_objects_v2(
                 Bucket=ACCESS_POINT_ALIAS, Prefix="bar/"
             ),
             expect_access_err=True,
         ),
         S3Test(
-            name="Get /bar/test.txt via access point should fail",
+            name="Get bar/test.txt via access point should fail",
             operation=lambda client: client.get_object(
                 Bucket=ACCESS_POINT_ALIAS, Key="bar/test.txt"
             ),

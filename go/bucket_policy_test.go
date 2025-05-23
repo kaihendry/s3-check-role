@@ -30,7 +30,7 @@ func TestBucketPolicyS3Access(t *testing.T) {
 			expectAccessErr: true,
 		},
 		{
-			name: "Listing /foo/ should succeed",
+			name: "Listing foo/ should succeed",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 					Bucket: aws.String(bucketName),
@@ -41,7 +41,7 @@ func TestBucketPolicyS3Access(t *testing.T) {
 			expectAccessErr: false,
 		},
 		{
-			name: "Get /foo/test.txt should succeed",
+			name: "Get foo/test.txt should succeed",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.GetObject(ctx, &s3.GetObjectInput{
 					Bucket: aws.String(bucketName),
@@ -52,7 +52,7 @@ func TestBucketPolicyS3Access(t *testing.T) {
 			expectAccessErr: false,
 		},
 		{
-			name: "List /bar/ should fail",
+			name: "List bar/ should fail",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 					Bucket: aws.String(bucketName),
@@ -74,7 +74,7 @@ func TestBucketPolicyS3Access(t *testing.T) {
 			expectAccessErr: true,
 		},
 		{
-			name: "List with parent path /fo should fail",
+			name: "List with parent path fo should fail",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 					Bucket: aws.String(bucketName),
@@ -85,7 +85,7 @@ func TestBucketPolicyS3Access(t *testing.T) {
 			expectAccessErr: true,
 		},
 		{
-			name: "List with similar path /foobar should fail",
+			name: "List with similar path foobar/ should fail",
 			operation: func(ctx context.Context, client *s3.Client) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 					Bucket: aws.String(bucketName),

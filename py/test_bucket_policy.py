@@ -22,21 +22,21 @@ def s3_client():
             expect_access_err=True,
         ),
         S3Test(
-            name="Listing /foo/ should succeed",
+            name="Listing foo/ should succeed",
             operation=lambda client: client.list_objects_v2(
                 Bucket=BUCKET_NAME, Prefix="foo/"
             ),
             expect_access_err=False,
         ),
         S3Test(
-            name="Get /foo/test.txt should succeed",
+            name="Get foo/test.txt should succeed",
             operation=lambda client: client.get_object(
                 Bucket=BUCKET_NAME, Key="foo/test.txt"
             ),
             expect_access_err=False,
         ),
         S3Test(
-            name="List /bar/ should fail",
+            name="List bar/ should fail",
             operation=lambda client: client.list_objects_v2(
                 Bucket=BUCKET_NAME, Prefix="bar/"
             ),
@@ -50,14 +50,14 @@ def s3_client():
             expect_access_err=True,
         ),
         S3Test(
-            name="List with parent path /fo should fail",
+            name="List with parent path fo should fail",
             operation=lambda client: client.list_objects_v2(
                 Bucket=BUCKET_NAME, Prefix="fo"
             ),
             expect_access_err=True,
         ),
         S3Test(
-            name="List with similar path /foobar should fail",
+            name="List with similar path foobar/ should fail",
             operation=lambda client: client.list_objects_v2(
                 Bucket=BUCKET_NAME, Prefix="foobar/"
             ),
