@@ -85,7 +85,7 @@ class TestS3BucketPolicy(unittest.TestCase):
                 bucket="s3-check-role-2025",
                 item_key_or_prefix="",  # Listing bucket root, no specific prefix/key
                 operation=self.operation_list_bucket_root,
-                expect_access_err=False,
+                expect_access_err=True,  # Changed to True - direct bucket access should be denied
             ),
             S3TestCase(
                 name="List foo/ via parent bucket should not succeed",
@@ -93,7 +93,7 @@ class TestS3BucketPolicy(unittest.TestCase):
                 bucket="s3-check-role-2025",
                 item_key_or_prefix="foo/",
                 operation=self.operation_list_foo_prefix_via_bucket,
-                expect_access_err=False,
+                expect_access_err=True,  # Changed to True - direct bucket access should be denied
             ),
             S3TestCase(
                 name="List foo/ via access point should succeed",

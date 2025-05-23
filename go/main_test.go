@@ -54,7 +54,7 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 				})
 				return err
 			},
-			expectAccessErr: false,
+			expectAccessErr: true, // Changed to true - direct bucket access should be denied
 		},
 		{
 			name:            "List foo/ via parent bucket should not succeed",
@@ -68,7 +68,7 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 				})
 				return err
 			},
-			expectAccessErr: false,
+			expectAccessErr: true, // Changed to true - direct bucket access should be denied
 		},
 		{
 			name:            "List foo/ via access point should succeed",
