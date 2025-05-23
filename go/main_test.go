@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -29,11 +30,11 @@ func TestS3Access(t *testing.T) {
 	ctx := context.TODO()
 
 	tests := []struct {
-		name          string
-		roleArn       string
-		bucketName    string
-		operation     func(context.Context, *s3.Client) error
-		shouldSucceed bool
+		name            string
+		roleArn         string
+		bucketName      string
+		operation       func(context.Context, *s3.Client) error
+		expectAccessErr bool
 	}{
 		{
 			name:       "List top level Bucket Contents should fail",
@@ -45,7 +46,7 @@ func TestS3Access(t *testing.T) {
 				})
 				return err
 			},
-			shouldSucceed: false,
+			expectAccessErr: true,
 		},
 		{
 			name:       "Listing /foo/ should succeed",
@@ -58,7 +59,7 @@ func TestS3Access(t *testing.T) {
 				})
 				return err
 			},
-			shouldSucceed: true,
+			expectAccessErr: false,
 		},
 		{
 			name:       "Get /foo/test.txt should succeed",
@@ -71,7 +72,7 @@ func TestS3Access(t *testing.T) {
 				})
 				return err
 			},
-			shouldSucceed: true,
+			expectAccessErr: false,
 		},
 		{
 			name:       "List top level Bucket Contents should fail",
@@ -83,7 +84,7 @@ func TestS3Access(t *testing.T) {
 				})
 				return err
 			},
-			shouldSucceed: false,
+			expectAccessErr: true,
 		},
 		{
 			name:       "Listing /foo/ should fail",
@@ -96,7 +97,7 @@ func TestS3Access(t *testing.T) {
 				})
 				return err
 			},
-			shouldSucceed: false,
+			expectAccessErr: true,
 		},
 		{
 			name:       "Get /foo/test.txt should fail",
@@ -109,7 +110,7 @@ func TestS3Access(t *testing.T) {
 				})
 				return err
 			},
-			shouldSucceed: false,
+			expectAccessErr: true,
 		},
 		{
 			name:       "List /foo via access point should succeed",
@@ -122,7 +123,7 @@ func TestS3Access(t *testing.T) {
 				})
 				return err
 			},
-			shouldSucceed: true,
+			expectAccessErr: false,
 		},
 		{
 			name:       "Get /foo/test.txt via access point should succeed",
@@ -135,7 +136,7 @@ func TestS3Access(t *testing.T) {
 				})
 				return err
 			},
-			shouldSucceed: true,
+			expectAccessErr: false,
 		},
 	}
 
@@ -155,11 +156,15 @@ func TestS3Access(t *testing.T) {
 			}
 
 			err := tc.operation(ctx, client)
-			if tc.shouldSucceed && err != nil {
-				t.Errorf("Expected success but got error: %v", err)
-			}
-			if !tc.shouldSucceed && err == nil {
-				t.Errorf("Expected error but operation succeeded")
+
+			if tc.expectAccessErr {
+				if err == nil {
+					t.Error("Expected access denied error but operation succeeded")
+				} else if !strings.Contains(err.Error(), "AccessDenied") {
+					t.Errorf("Expected AccessDenied error but got: %v", err)
+				}
+			} else if err != nil {
+				t.Errorf("Expected operation to succeed but got error: %v", err)
 			}
 		})
 	}
