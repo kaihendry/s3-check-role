@@ -14,7 +14,7 @@ variable "bucket_name" {
 variable "prefix" {
   description = "Permitted prefix for S3 objects."
   type        = string
-  default     = "datalake/TEMP/TRN/foo/"
+  default     = "megalake/TANK/BLAH/foo/"
 }
 
 
