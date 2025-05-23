@@ -28,38 +28,36 @@ resource "aws_s3_access_point" "secure_bucket_access_point" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
-      # deny any operations under bar/* before allows
       {
+        Sid       = "DenyAllExceptFoo",
         Effect    = "Deny",
-        Principal = { "AWS" : aws_iam_role.a_role.arn },
+        Principal = { AWS = aws_iam_role.a_role.arn },
+        Action    = "s3:*",
+        NotResource = [
+          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
+          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/foo/*"
+        ]
+      },
+      {
+        Sid       = "DenyListNotFoo",
+        Effect    = "Deny",
+        Principal = { AWS = aws_iam_role.a_role.arn },
         Action    = "s3:ListBucket",
         Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
-        Condition = {
-          StringLike = {
-            "s3:prefix" = "bar/*"
-          }
-        }
+        Condition = { StringNotLike = { "s3:prefix" = "foo/*" } }
       },
       {
-        Effect    = "Deny",
-        Principal = { "AWS" : aws_iam_role.a_role.arn },
-        Action    = "s3:GetObject",
-        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/bar/*"
-      },
-      {
+        Sid       = "AllowListFoo",
         Effect    = "Allow",
-        Principal = { "AWS" : aws_iam_role.a_role.arn },
+        Principal = { AWS = aws_iam_role.a_role.arn },
         Action    = "s3:ListBucket",
         Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
-        Condition = {
-          StringLike = {
-            "s3:prefix" = "foo/*"
-          }
-        }
+        Condition = { StringLike = { "s3:prefix" = "foo/*" } }
       },
       {
+        Sid       = "AllowGetFoo",
         Effect    = "Allow",
-        Principal = { "AWS" : aws_iam_role.a_role.arn },
+        Principal = { AWS = aws_iam_role.a_role.arn },
         Action    = "s3:GetObject",
         Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/foo/*"
       }
