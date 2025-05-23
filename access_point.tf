@@ -35,7 +35,7 @@ resource "aws_s3_access_point" "secure_bucket_access_point" {
         Action    = "s3:*",
         NotResource = [
           "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
-          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/foo/*"
+          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/${var.prefix}*"
         ]
       },
       {
@@ -44,7 +44,7 @@ resource "aws_s3_access_point" "secure_bucket_access_point" {
         Principal = { AWS = aws_iam_role.a_role.arn },
         Action    = "s3:ListBucket",
         Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
-        Condition = { StringNotLike = { "s3:prefix" = "foo/*" } }
+        Condition = { StringNotLike = { "s3:prefix" = "${var.prefix}*" } }
       },
       {
         Sid       = "AllowListFoo",
@@ -52,14 +52,14 @@ resource "aws_s3_access_point" "secure_bucket_access_point" {
         Principal = { AWS = aws_iam_role.a_role.arn },
         Action    = "s3:ListBucket",
         Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
-        Condition = { StringLike = { "s3:prefix" = "foo/*" } }
+        Condition = { StringLike = { "s3:prefix" = "${var.prefix}*" } }
       },
       {
         Sid       = "AllowGetFoo",
         Effect    = "Allow",
         Principal = { AWS = aws_iam_role.a_role.arn },
         Action    = "s3:GetObject",
-        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/foo/*"
+        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/${var.prefix}*"
       }
     ]
   })
