@@ -17,7 +17,7 @@ jobs:
         with:
             role-to-assume: arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ
             aws-region: eu-west-2
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
       - name: Lint
         working-directory: py
         run: uvx ruff check
