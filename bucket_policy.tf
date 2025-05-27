@@ -20,11 +20,11 @@ resource "aws_s3_bucket_policy" "secure_bucket_policy" {
           "${aws_s3_bucket.secure_bucket.arn}/*"
         ],
         Condition = {
-          StringNotEquals = {
+          StringNotLike = {
             "aws:PrincipalArn" = [
               "arn:aws:iam::407461997746:user/hendry",
               "arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ",
-              "arn:aws:iam::407461997746:role/AWSReservedSSO_AdministratorAccess_faa8fd51f242b1ab"
+              "arn:aws:iam::*:role/AWSReservedSSO_AdministratorAccess_*"
             ]
           },
           Null = {
