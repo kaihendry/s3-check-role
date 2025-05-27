@@ -2,7 +2,6 @@
 
 Idea is given a role, assert it meets its requirements.
 
-
 # Two Layers of Policies:
 
 Access Point Policy: This is a resource-based policy attached directly to the access point. It defines what actions are allowed through that specific access point and by which principals. In your case, your access point policy correctly allows a_role to ListBucket on the access point and GetObject on foo/* objects via the access point.
@@ -26,3 +25,14 @@ One of the most significant advantages of using S3 Access Points is the ability 
 
 By using Access Points, the bucket policy can remain simpler, focusing on broad rules, while granular permissions are handled by individual Access Point policies. This simplifies management and reduces the risk associated with policy changes.
 
+# Access Point delegate
+
+Two ways:
+
+    s3:DataAccessPointAccount
+
+OR
+
+    Null = {
+        "s3:DataAccessPointArn" = "true"
+    }

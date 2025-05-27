@@ -11,7 +11,8 @@ resource "aws_s3_bucket_policy" "secure_bucket_policy" {
         Principal = {
           AWS = [
             "arn:aws:iam::407461997746:user/hendry",
-            "arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ"
+            "arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ",
+            "arn:aws:iam::407461997746:role/AWSReservedSSO_AdministratorAccess_faa8fd51f242b1ab"
           ]
         },
         Action = "s3:*",
