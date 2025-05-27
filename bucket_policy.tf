@@ -21,26 +21,6 @@ resource "aws_s3_bucket_policy" "secure_bucket_policy" {
         ]
       },
       {
-        Sid       = "AllowAccessPointAccess",
-        Effect    = "Allow",
-        Principal = "*",
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
-        ],
-        Resource = [
-          aws_s3_bucket.secure_bucket.arn,
-          "${aws_s3_bucket.secure_bucket.arn}/*"
-        ],
-        Condition = {
-          StringLike = {
-            "s3:DataAccessPointArn" = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/*"
-          }
-        }
-      },
-      {
         Sid       = "DenyAllOtherAccess",
         Effect    = "Deny",
         Principal = "*",
