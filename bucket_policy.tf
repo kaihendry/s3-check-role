@@ -24,7 +24,8 @@ resource "aws_s3_bucket_policy" "secure_bucket_policy" {
             "aws:PrincipalArn" = [
               "arn:aws:iam::407461997746:user/hendry",
               "arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ",
-              "arn:aws:iam::*:role/AWSReservedSSO_AdministratorAccess_*"
+              "arn:aws:iam::*:role/AWSReservedSSO_AdministratorAccess_*",
+              "arn:aws:sts::*:assumed-role/AWSReservedSSO_AdministratorAccess_*/*"
             ]
           },
           Null = {
