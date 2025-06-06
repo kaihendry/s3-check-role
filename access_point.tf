@@ -29,60 +29,38 @@ resource "aws_s3_access_point" "secure_bucket_access_point" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid : "DenyAllS3ActionsForNonAllowedRoles",
-        Effect : "Deny",
-        Principal : "*",
-        Action : "s3:*",
-        Resource : [
-          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
-          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/*"
-        ],
-        Condition : {
-          StringNotEquals : {
-            "aws:PrincipalArn" : local.effective_allowed_role_arns
-          }
-        }
-      },
-      {
-        Sid : "DenyAllowedRoleS3ActionsOutsidePrefix",
-        Effect : "Deny",
-        Principal : "*",
-        Action : "s3:*",
-        Resource : [
-          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap"
-        ],
-        Condition : {
-          StringNotLike : {
-            "s3:prefix" : ["${var.prefix}*"]
-          }
-        }
-      },
-      {
-        Sid : "DenyOtherActionsToAllowedRoles",
-        Effect : "Deny",
-        Principal : "*",
-        Action : [
-          "s3:Put*",
-          "s3:Delete*",
-          "s3:AbortMultipartUpload",
-          "s3:BypassGovernanceRetention",
-          "s3:RestoreObject",
-          "s3:*Acl"
-        ],
-        Resource : "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/*"
-      },
-      {
-        Sid : "AllowListBucketOnlyUnderAllowedPrefix",
+        Sid : "DenyAllExceptAllowedRoles",
         Effect : "Deny",
         Principal : { "AWS" : local.effective_allowed_role_arns },
-        Action : "s3:ListBucket",
-        Resource : "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
-        Condition : {
-          StringNotLike : {
-            "s3:prefix" : ["${var.prefix}*"]
-          }
-        }
+        Action : "s3:*",
+        NotResource : [
+          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
+          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/${var.prefix}*"
+        ],
       },
+      {
+        Sid    = "RestrictListToAllowedPrefix",
+        Effect = "Deny",
+        Principal : { "AWS" : local.effective_allowed_role_arns },
+        Action    = "s3:ListBucket",
+        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
+        Condition = { StringNotLike = { "s3:prefix" = "${var.prefix}*" } }
+      },
+      {
+        Sid       = "AllowListingPrefix"
+        Effect    = "Allow"
+        Principal = { "AWS" : local.effective_allowed_role_arns }
+        Action    = "s3:ListBucket"
+        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap"
+        Condition = { StringLike = { "s3:prefix" = "${var.prefix}*" } }
+      },
+      {
+        Sid       = "AllowGetObject"
+        Effect    = "Allow"
+        Principal = { "AWS" : local.effective_allowed_role_arns }
+        Action    = "s3:GetObject"
+        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/${var.prefix}*"
+      }
     ]
   })
 }
