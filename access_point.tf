@@ -29,22 +29,38 @@ resource "aws_s3_access_point" "secure_bucket_access_point" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid : "DenyAllExceptAllowedRoles",
-        Effect : "Deny",
-        Principal : { "AWS" : local.effective_allowed_role_arns },
-        Action : "s3:*",
-        NotResource : [
+        Sid       = "DenyAllExceptAllowedRoles"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
           "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
-          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/${var.prefix}*"
-        ],
+          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/*"
+        ]
+        Condition = {
+          StringNotLike = {
+            "aws:PrincipalArn" = local.effective_allowed_role_arns
+          }
+        }
       },
       {
-        Sid    = "RestrictListToAllowedPrefix",
-        Effect = "Deny",
-        Principal : { "AWS" : local.effective_allowed_role_arns },
-        Action    = "s3:ListBucket",
-        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
-        Condition = { StringNotLike = { "s3:prefix" = "${var.prefix}*" } }
+        Sid       = "DenyListBucketOutsidePrefix"
+        Effect    = "Deny"
+        Principal = { "AWS" : local.effective_allowed_role_arns }
+        Action    = "s3:ListBucket"
+        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap"
+        Condition = {
+          StringNotLike = {
+            "s3:prefix" = "${var.prefix}*"
+          }
+        }
+      },
+      {
+        Sid         = "DenyGetObjectOutsidePrefix"
+        Effect      = "Deny"
+        Principal   = { "AWS" : local.effective_allowed_role_arns }
+        Action      = "s3:GetObject"
+        NotResource = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/${var.prefix}*"
       },
       {
         Sid       = "AllowListingPrefix"

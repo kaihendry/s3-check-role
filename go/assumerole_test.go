@@ -7,73 +7,59 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
 // test prefixes for objects
+var (
+	fooPrefix = "megalake/TANK/BLAH/foo/" // MUST have trailing slash!!
+	barPrefix = "bar/"
+)
 
-func getS3ClientDefault(ctx context.Context) (*s3.Client, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
+func getS3ClientForRole(ctx context.Context, roleArn string) (*s3.Client, error) {
+	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return nil, err
 	}
-	return s3.NewFromConfig(cfg), nil
-}
 
-func printCurrentIdentity(ctx context.Context, t *testing.T) {
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		t.Logf("Failed to load AWS config: %v", err)
-		return
-	}
 	stsClient := sts.NewFromConfig(cfg)
-	output, err := stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
-	if err != nil {
-		t.Logf("Failed to get caller identity: %v", err)
-		return
-	}
-	t.Logf("Current AWS Identity: ARN=%s, Account=%s, UserId=%s", aws.ToString(output.Arn), aws.ToString(output.Account), aws.ToString(output.UserId))
+	provider := stscreds.NewAssumeRoleProvider(stsClient, roleArn)
+	roleCfg := cfg.Copy()
+	roleCfg.Credentials = aws.NewCredentialsCache(provider)
+
+	return s3.NewFromConfig(roleCfg), nil
 }
 
-func TestAccessPointS3AccessMain_NoAssumeRole(t *testing.T) {
+func TestAccessPointS3AccessMain(t *testing.T) {
 	ctx := context.TODO()
 
 	tests := []struct {
 		name            string
+		roleArn         string
 		bucket          string
 		itemKeyOrPrefix string // Added for verbose logging
 		operation       func(context.Context, *s3.Client, string) error
 		expectAccessErr bool
 	}{
 		{
-			name:            "List parent bucket should succeed (no assume role)",
+			name:            "List parent bucket should not succeed",
+			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
 			bucket:          "s3-check-role-2025",
-			itemKeyOrPrefix: "",
+			itemKeyOrPrefix: "", // Listing bucket root, no specific prefix/key
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 					Bucket: aws.String(bucket),
 				})
 				return err
 			},
-			expectAccessErr: false,
+			expectAccessErr: true,
 		},
 		{
-			name:            "List $prefix/ via parent bucket should succeed (no assume role)",
+			name:            "List $prefix/ via parent bucket should not succeed",
+			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
 			bucket:          "s3-check-role-2025",
-			itemKeyOrPrefix: fooPrefix,
-			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
-				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
-					Bucket: aws.String(bucket),
-					Prefix: aws.String(fooPrefix),
-				})
-				return err
-			},
-			expectAccessErr: false,
-		},
-		{
-			name:            "List $prefix/ via access point should not succeed (no assume role)",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
 			itemKeyOrPrefix: fooPrefix,
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
@@ -85,7 +71,22 @@ func TestAccessPointS3AccessMain_NoAssumeRole(t *testing.T) {
 			expectAccessErr: true,
 		},
 		{
-			name:            "Get $prefix/test.txt via access point should succeed (no assume role)",
+			name:            "List $prefix/ via access point should succeed",
+			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
+			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			itemKeyOrPrefix: fooPrefix,
+			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
+				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+					Bucket: aws.String(bucket),
+					Prefix: aws.String(fooPrefix),
+				})
+				return err
+			},
+			expectAccessErr: false,
+		},
+		{
+			name:            "Get $prefix/test.txt via access point should succeed",
+			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
 			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
 			itemKeyOrPrefix: fooPrefix + "test.txt",
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
@@ -95,10 +96,11 @@ func TestAccessPointS3AccessMain_NoAssumeRole(t *testing.T) {
 				})
 				return err
 			},
-			expectAccessErr: true,
+			expectAccessErr: false,
 		},
 		{
-			name:            "List bar/ via access point should fail (no assume role)",
+			name:            "List bar/ via access point should fail",
+			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
 			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
 			itemKeyOrPrefix: barPrefix,
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
@@ -111,7 +113,8 @@ func TestAccessPointS3AccessMain_NoAssumeRole(t *testing.T) {
 			expectAccessErr: true,
 		},
 		{
-			name:            "Get bar/test.txt via access point should fail (no assume role)",
+			name:            "Get bar/test.txt via access point should fail",
+			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
 			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
 			itemKeyOrPrefix: barPrefix + "test.txt",
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
@@ -125,23 +128,21 @@ func TestAccessPointS3AccessMain_NoAssumeRole(t *testing.T) {
 		},
 	}
 
-	printCurrentIdentity(ctx, t)
-
-	client, err := getS3ClientDefault(ctx)
-	if err != nil {
-		t.Fatalf("Failed to create default S3 client: %v", err)
-	}
-
 	for _, tc := range tests {
-		tc := tc // Capture tc for closure
+		tc := tc // Capture tc for use in closure
 		t.Run(tc.name, func(t *testing.T) {
+			t.Logf("Assumed role ARN: %s", tc.roleArn)
 			t.Logf("Testing S3 Bucket: %s", tc.bucket)
 			if tc.itemKeyOrPrefix != "" {
 				t.Logf("Target Item (Key/Prefix): %s", tc.itemKeyOrPrefix)
 			} else {
 				t.Logf("Target Item (Key/Prefix): <bucket root>")
 			}
-			err := tc.operation(ctx, client, tc.bucket)
+			client, err := getS3ClientForRole(ctx, tc.roleArn)
+			if err != nil {
+				t.Fatalf("Failed to create S3 client for role ARN %s: %v", tc.roleArn, err)
+			}
+			err = tc.operation(ctx, client, tc.bucket)
 			if tc.expectAccessErr {
 				if err == nil {
 					t.Error("Expected access denied error but operation succeeded")
