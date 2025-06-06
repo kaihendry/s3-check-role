@@ -13,8 +13,11 @@ resource "aws_iam_role_policy" "a_role_access_point_readonly" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = "s3:*",
+        Effect = "Allow",
+        Action = [
+          "s3:ListBucket",
+          "s3:GetObject"
+        ],
         Resource = "*"
       }
     ]
@@ -42,6 +45,23 @@ resource "aws_s3_access_point" "secure_bucket_access_point" {
             "aws:PrincipalArn" = local.effective_allowed_role_arns
           }
         }
+      },
+      {
+        Sid       = "DenyWriteActionsForAllowedRoles"
+        Effect    = "Deny"
+        Principal = { "AWS" : local.effective_allowed_role_arns }
+        Action = [
+          "s3:PutObject",
+          "s3:PutObjectAcl",
+          "s3:DeleteObject",
+          "s3:DeleteObjectVersion",
+          "s3:PutObjectTagging",
+          "s3:PutObjectVersionAcl",
+          "s3:PutObjectVersionTagging",
+          "s3:AbortMultipartUpload",
+          "s3:RestoreObject"
+        ]
+        Resource = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/*"
       },
       {
         Sid       = "DenyListBucketOutsidePrefix"
