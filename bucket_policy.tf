@@ -15,7 +15,7 @@ resource "aws_s3_bucket_policy" "secure_bucket_policy" {
           "${aws_s3_bucket.secure_bucket.arn}/*"
         ],
         Condition = {
-          StringNotLike = {
+          ArnNotLike = {
             "aws:PrincipalArn" = [
               "arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ",
               "arn:aws:iam::407461997746:role/aws-reserved/sso.amazonaws.com/ap-southeast-1/AWSReservedSSO_AdministratorAccess_*"
