@@ -25,6 +25,9 @@ One of the most significant advantages of using S3 Access Points is the ability 
 
 By using Access Points, the bucket policy can remain simpler, focusing on broad rules, while granular permissions are handled by individual Access Point policies. This simplifies management and reduces the risk associated with policy changes.
 
+https://aws.amazon.com/blogs/security/how-to-restrict-amazon-s3-bucket-access-to-a-specific-iam-role/
+
+
 # Access Point delegate
 
 Two ways:

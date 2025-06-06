@@ -24,45 +24,6 @@ resource "aws_iam_role_policy" "a_role_access_point_readonly" {
 resource "aws_s3_access_point" "secure_bucket_access_point" {
   name   = "${var.bucket_name}-ap"
   bucket = aws_s3_bucket.secure_bucket.id
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid       = "DenyAllExceptFoo",
-        Effect    = "Deny",
-        Principal = { AWS = aws_iam_role.a_role.arn },
-        Action    = "s3:*",
-        NotResource = [
-          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
-          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/${var.prefix}*"
-        ]
-      },
-      {
-        Sid       = "DenyListNotFoo",
-        Effect    = "Deny",
-        Principal = { AWS = aws_iam_role.a_role.arn },
-        Action    = "s3:ListBucket",
-        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
-        Condition = { StringNotLike = { "s3:prefix" = "${var.prefix}*" } }
-      },
-      {
-        Sid       = "AllowListFoo",
-        Effect    = "Allow",
-        Principal = { AWS = aws_iam_role.a_role.arn },
-        Action    = "s3:ListBucket",
-        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
-        Condition = { StringLike = { "s3:prefix" = "${var.prefix}*" } }
-      },
-      {
-        Sid       = "AllowGetFoo",
-        Effect    = "Allow",
-        Principal = { AWS = aws_iam_role.a_role.arn },
-        Action    = "s3:GetObject",
-        Resource  = "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/${var.prefix}*"
-      }
-    ]
-  })
 }
 
 output "a_role_arn" {
