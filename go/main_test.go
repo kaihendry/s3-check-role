@@ -54,24 +54,24 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 				})
 				return err
 			},
-			expectAccessErr: true, // Changed to true - direct bucket access should be denied
+			expectAccessErr: true,
 		},
 		{
-			name:            "List foo/ via parent bucket should not succeed",
+			name:            "List $prefix/ via parent bucket should not succeed",
 			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
 			bucket:          "s3-check-role-2025",
-			itemKeyOrPrefix: "foo/",
+			itemKeyOrPrefix: fooPrefix,
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
 					Bucket: aws.String(bucket),
-					Prefix: aws.String("foo/"),
+					Prefix: aws.String(fooPrefix),
 				})
 				return err
 			},
-			expectAccessErr: true, // Changed to true - direct bucket access should be denied
+			expectAccessErr: true,
 		},
 		{
-			name:            "List foo/ via access point should succeed",
+			name:            "List $prefix/ via access point should succeed",
 			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
 			bucket:          "s3-check-role-2025-a-6fqfjtu7ea8y6jn3twifbgzzw91fyeuw2b-s3alias",
 			itemKeyOrPrefix: fooPrefix,
@@ -85,7 +85,7 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 			expectAccessErr: false,
 		},
 		{
-			name:            "Get foo/test.txt via access point should succeed",
+			name:            "Get $prefix/test.txt via access point should succeed",
 			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
 			bucket:          "s3-check-role-2025-a-6fqfjtu7ea8y6jn3twifbgzzw91fyeuw2b-s3alias",
 			itemKeyOrPrefix: fooPrefix + "test.txt",
