@@ -24,6 +24,74 @@ resource "aws_iam_role_policy" "a_role_access_point_readonly" {
 resource "aws_s3_access_point" "secure_bucket_access_point" {
   name   = "${var.bucket_name}-ap"
   bucket = aws_s3_bucket.secure_bucket.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid : "DenyAllS3ActionsForNonAllowedRoles",
+        Effect : "Deny",
+        Principal : "*",
+        Action : "s3:*",
+        Resource : [
+          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
+          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/*"
+        ],
+        Condition : {
+          StringNotEquals : {
+            "aws:PrincipalArn" : local.effective_allowed_role_arns
+          }
+        }
+      },
+      {
+        Sid : "DenyAllowedRoleS3ActionsOutsidePrefix",
+        Effect : "Deny",
+        Principal : "*",
+        Action : "s3:*",
+        Resource : [
+          "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap"
+        ],
+        Condition : {
+          StringNotLike : {
+            "s3:prefix" : ["${var.prefix}*"]
+          }
+        }
+      },
+      {
+        Sid : "DenyOtherActionsToAllowedRoles",
+        Effect : "Deny",
+        Principal : "*",
+        Action : [
+          "s3:Put*",
+          "s3:Delete*",
+          "s3:AbortMultipartUpload",
+          "s3:BypassGovernanceRetention",
+          "s3:RestoreObject",
+          "s3:*Acl"
+        ],
+        Resource : "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap/object/*"
+      },
+      {
+        Sid : "AllowListBucketOnlyUnderAllowedPrefix",
+        Effect : "Deny",
+        Principal : { "AWS" : local.effective_allowed_role_arns },
+        Action : "s3:ListBucket",
+        Resource : "arn:aws:s3:${var.aws_region}:${data.aws_caller_identity.current.account_id}:accesspoint/${var.bucket_name}-ap",
+        Condition : {
+          StringNotLike : {
+            "s3:prefix" : ["${var.prefix}*"]
+          }
+        }
+      },
+    ]
+  })
+}
+
+locals {
+  effective_allowed_role_arns = setunion(
+    var.allowed_role_arns,
+    [aws_iam_role.a_role.arn]
+  )
 }
 
 output "a_role_arn" {

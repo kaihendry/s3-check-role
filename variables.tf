@@ -23,3 +23,9 @@ variable "aws_organization_id" {
   type        = string
   default     = "o-nev2i5j9pw"
 }
+
+variable "allowed_role_arns" {
+  description = "List of IAM role ARNs allowed to access the S3 access point."
+  type        = list(string)
+  default     = []
+}
