@@ -1,5 +1,7 @@
 # Test a role for S3 access
 
+
+
 Idea is given a role, assert it meets its requirements.
 
 # Two Layers of Policies:
@@ -39,3 +41,47 @@ OR
     Null = {
         "s3:DataAccessPointArn" = "true"
     }
+
+# Policy Decision Tree
+
+The following diagram shows how the bucket policy evaluates requests with and without Access Points:
+
+```mermaid
+graph TD
+    A[Request to S3 Bucket] --> B{Has Access Point?}
+    
+    %% Without Access Point Branch
+    B -->|No| C{Is Admin Role?}
+    C -->|Yes| D[ArnNotLike = false]
+    C -->|No| E[ArnNotLike = true]
+    D --> F[Access ALLOWED]
+    E --> G[StringNotEquals = false]
+    G --> H[Access DENIED]
+    
+    %% With Access Point Branch
+    B -->|Yes| I{Is Admin Role?}
+    I -->|Yes| J[ArnNotLike = false]
+    I -->|No| K[ArnNotLike = true]
+    J --> L[Access ALLOWED]
+    K --> M{Account ID matches?}
+    M -->|Yes| N[StringNotEquals = false]
+    M -->|No| O[StringNotEquals = true]
+    N --> P[Access ALLOWED]
+    O --> Q[Access DENIED]
+
+    style F fill:#90EE90
+    style H fill:#FFB6C1
+    style L fill:#90EE90
+    style P fill:#90EE90
+    style Q fill:#FFB6C1
+```
+
+The policy creates three paths to access:
+1. Admin roles (always allowed)
+2. Access point with matching account ID (allowed)
+3. Everything else (denied)
+
+This ensures that:
+- Admin roles maintain access regardless of access point usage
+- Non-admin roles must use an access point with matching account ID
+- All other access attempts are denied

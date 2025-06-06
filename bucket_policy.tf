@@ -21,7 +21,7 @@ resource "aws_s3_bucket_policy" "secure_bucket_policy" {
               "arn:aws:iam::407461997746:role/aws-reserved/sso.amazonaws.com/ap-southeast-1/AWSReservedSSO_AdministratorAccess_*"
             ]
           }
-          StringNotEqualsIfExists = {
+          StringNotEquals = {
             "s3:DataAccessPointAccount" = data.aws_caller_identity.current.account_id
           }
         }
