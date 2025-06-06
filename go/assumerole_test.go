@@ -171,14 +171,14 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 			expectAccessErr: true,
 		},
 		{
-			name:            "Delete root/put.txt via access point should fail",
+			name:            "Delete test.txt via access point should fail",
 			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
 			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
 			itemKeyOrPrefix: "put.txt",
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.DeleteObject(ctx, &s3.DeleteObjectInput{
 					Bucket: aws.String(bucket),
-					Key:    aws.String("put.txt"),
+					Key:    aws.String("test.txt"),
 				})
 				return err
 			},

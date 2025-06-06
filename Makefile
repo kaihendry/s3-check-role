@@ -4,6 +4,7 @@ PRODUCT = aptest
 
 .terraform:
 	terraform init
+	terraform validate
 
 apply: .terraform fmt
 	terraform apply -auto-approve
