@@ -73,7 +73,7 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 		{
 			name:            "List $prefix/ via access point should succeed",
 			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			bucket:          getAPAlias(),
 			itemKeyOrPrefix: fooPrefix,
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
@@ -87,7 +87,7 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 		{
 			name:            "Get $prefix/test.txt via access point should succeed",
 			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			bucket:          getAPAlias(),
 			itemKeyOrPrefix: fooPrefix + "test.txt",
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.GetObject(ctx, &s3.GetObjectInput{
@@ -101,7 +101,7 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 		{
 			name:            "List bar/ via access point should fail",
 			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			bucket:          getAPAlias(),
 			itemKeyOrPrefix: barPrefix,
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
@@ -115,7 +115,7 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 		{
 			name:            "Get bar/test.txt via access point should fail",
 			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			bucket:          getAPAlias(),
 			itemKeyOrPrefix: barPrefix + "test.txt",
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.GetObject(ctx, &s3.GetObjectInput{
@@ -129,7 +129,7 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 		{
 			name:            "Put $prefix/put.txt via access point should fail",
 			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			bucket:          getAPAlias(),
 			itemKeyOrPrefix: fooPrefix + "put.txt",
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.PutObject(ctx, &s3.PutObjectInput{
@@ -144,7 +144,7 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 		{
 			name:            "Put root/put.txt via access point should fail",
 			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			bucket:          getAPAlias(),
 			itemKeyOrPrefix: "put.txt",
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.PutObject(ctx, &s3.PutObjectInput{
@@ -159,7 +159,7 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 		{
 			name:            "Delete $prefix/test.txt via access point should fail",
 			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			bucket:          getAPAlias(),
 			itemKeyOrPrefix: fooPrefix + "test.txt",
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.DeleteObject(ctx, &s3.DeleteObjectInput{
@@ -173,7 +173,7 @@ func TestAccessPointS3AccessMain(t *testing.T) {
 		{
 			name:            "Delete test.txt via access point should fail",
 			roleArn:         "arn:aws:iam::407461997746:role/foo-via-access-point",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			bucket:          getAPAlias(),
 			itemKeyOrPrefix: "put.txt",
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.DeleteObject(ctx, &s3.DeleteObjectInput{

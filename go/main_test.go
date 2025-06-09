@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 	"strings"
 	"testing"
 
@@ -34,6 +35,14 @@ func printCurrentIdentity(ctx context.Context, t *testing.T) {
 		return
 	}
 	t.Logf("Current AWS Identity: ARN=%s, Account=%s, UserId=%s", aws.ToString(output.Arn), aws.ToString(output.Account), aws.ToString(output.UserId))
+}
+
+func getAPAlias() string {
+	alias := os.Getenv("AP_ALIAS")
+	if alias == "" {
+		panic("AP_ALIAS environment variable not set")
+	}
+	return alias
 }
 
 func TestAccessPointS3AccessMain_NoAssumeRole(t *testing.T) {
@@ -73,7 +82,7 @@ func TestAccessPointS3AccessMain_NoAssumeRole(t *testing.T) {
 		},
 		{
 			name:            "List $prefix/ via access point should not succeed (no assume role)",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			bucket:          getAPAlias(),
 			itemKeyOrPrefix: fooPrefix,
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
@@ -86,7 +95,7 @@ func TestAccessPointS3AccessMain_NoAssumeRole(t *testing.T) {
 		},
 		{
 			name:            "Get $prefix/test.txt via access point should succeed (no assume role)",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			bucket:          getAPAlias(),
 			itemKeyOrPrefix: fooPrefix + "test.txt",
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.GetObject(ctx, &s3.GetObjectInput{
@@ -99,7 +108,7 @@ func TestAccessPointS3AccessMain_NoAssumeRole(t *testing.T) {
 		},
 		{
 			name:            "List bar/ via access point should fail (no assume role)",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			bucket:          getAPAlias(),
 			itemKeyOrPrefix: barPrefix,
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
@@ -112,7 +121,7 @@ func TestAccessPointS3AccessMain_NoAssumeRole(t *testing.T) {
 		},
 		{
 			name:            "Get bar/test.txt via access point should fail (no assume role)",
-			bucket:          "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+			bucket:          getAPAlias(),
 			itemKeyOrPrefix: barPrefix + "test.txt",
 			operation: func(ctx context.Context, client *s3.Client, bucket string) error {
 				_, err := client.GetObject(ctx, &s3.GetObjectInput{

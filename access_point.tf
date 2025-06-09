@@ -129,6 +129,18 @@ resource "aws_s3_access_point" "secure_bucket_access_point" {
   policy = data.aws_iam_policy_document.secure_bucket_access_point_policy.json
 }
 
+resource "aws_ssm_parameter" "secure_bucket_access_point_alias" {
+  name        = "/s3-access-point/${var.bucket_name}/alias"
+  description = "S3 Access Point alias for bucket ${var.bucket_name}"
+  type        = "String"
+  value       = aws_s3_access_point.secure_bucket_access_point.alias
+  tags = {
+    Purpose = "S3 Access Point alias for app lookup"
+    Bucket  = var.bucket_name
+  }
+  depends_on = [aws_s3_access_point.secure_bucket_access_point]
+}
+
 locals {
   effective_allowed_role_arns = setunion(
     var.allowed_role_arns,

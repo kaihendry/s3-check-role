@@ -17,6 +17,13 @@ jobs:
         with:
             role-to-assume: arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ
             aws-region: eu-west-2
+      # look up /s3-access-point/s3-check-role-2025/alias from ssm parameter store, fail if not found
+      - name: Look up S3 Access Point Alias
+        id: ssm
+        run: |
+          AP_ALIAS=$(aws ssm get-parameter --name "/s3-access-point/s3-check-role-2025/alias" --query "Parameter.Value" --output text)
+          echo "S3 Access Point Alias: $AP_ALIAS"
+          echo "AP_ALIAS=${AP_ALIAS}" >> $GITHUB_ENV
       - uses: actions/setup-go@v5
       - name: test
         working-directory: go

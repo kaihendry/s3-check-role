@@ -18,13 +18,14 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Repo = "https://github.com/kaihendry/s3-check-role"
+      Repo = "https://github.com/kaihendry/s3-bucket-policy-hell/"
     }
   }
 }
 
 resource "aws_s3_bucket" "secure_bucket" {
-  bucket = var.bucket_name
+  bucket        = var.bucket_name
+  force_destroy = true
 }
 
 data "aws_caller_identity" "current" {}
