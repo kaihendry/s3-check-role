@@ -18,6 +18,12 @@ jobs:
             role-to-assume: arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ
             aws-region: eu-west-2
       - uses: astral-sh/setup-uv@v6
+      - name: Look up S3 Access Point Alias
+        id: ssm
+        run: |
+          AP_ALIAS=$(aws ssm get-parameter --name "/s3-access-point/s3-check-role-2025/alias" --query "Parameter.Value" --output text)
+          echo "S3 Access Point Alias: $AP_ALIAS"
+          echo "AP_ALIAS=${AP_ALIAS}" >> $GITHUB_ENV
       - name: Lint
         working-directory: py
         run: uvx ruff check

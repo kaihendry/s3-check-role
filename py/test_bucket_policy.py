@@ -3,11 +3,15 @@ import boto3
 from dataclasses import dataclass
 from typing import Callable
 from botocore.exceptions import ClientError
+import os
 
 
 # Test prefixes for objects
 FOO_PREFIX = "megalake/TANK/BLAH/foo/"  # MUST have trailing slash!!
 BAR_PREFIX = "bar/"
+
+# Use AP_ALIAS from environment if set, else default to the current value
+AP_ALIAS = os.environ.get("AP_ALIAS", "s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias")
 
 
 @dataclass
@@ -98,7 +102,7 @@ class TestS3BucketPolicy(unittest.TestCase):
             S3TestCase(
                 name="List foo/ via access point should succeed",
                 role_arn="arn:aws:iam::407461997746:role/foo-via-access-point",
-                bucket="s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+                bucket=AP_ALIAS,
                 item_key_or_prefix=FOO_PREFIX,
                 operation=self.operation_list_foo_prefix_via_access_point,
                 expect_access_err=False,
@@ -106,7 +110,7 @@ class TestS3BucketPolicy(unittest.TestCase):
             S3TestCase(
                 name="Get foo/test.txt via access point should succeed",
                 role_arn="arn:aws:iam::407461997746:role/foo-via-access-point",
-                bucket="s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+                bucket=AP_ALIAS,
                 item_key_or_prefix=FOO_PREFIX + "test.txt",
                 operation=self.operation_get_foo_test_file,
                 expect_access_err=False,
@@ -114,7 +118,7 @@ class TestS3BucketPolicy(unittest.TestCase):
             S3TestCase(
                 name="List bar/ via access point should fail",
                 role_arn="arn:aws:iam::407461997746:role/foo-via-access-point",
-                bucket="s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+                bucket=AP_ALIAS,
                 item_key_or_prefix=BAR_PREFIX,
                 operation=self.operation_list_bar_prefix_via_access_point,
                 expect_access_err=True,
@@ -122,7 +126,7 @@ class TestS3BucketPolicy(unittest.TestCase):
             S3TestCase(
                 name="Get bar/test.txt via access point should fail",
                 role_arn="arn:aws:iam::407461997746:role/foo-via-access-point",
-                bucket="s3-check-role-2025-a-woxf6459ho7bn61ydx5f74iwbk4qoeuw2b-s3alias",
+                bucket=AP_ALIAS,
                 item_key_or_prefix=BAR_PREFIX + "test.txt",
                 operation=self.operation_get_bar_test_file,
                 expect_access_err=True,
