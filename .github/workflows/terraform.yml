@@ -20,7 +20,7 @@ jobs:
       - run: make
       - name: Get S3 Access Point Alias from Terraform output
         id: get_tf_alias_output
-        run: echo "alias_value=$(terraform output -raw s3_access_point_alias)" >> $GITHUB_OUTPUT
+        run: echo "alias_value=$(terraform output -raw secure_bucket_access_point_alias)" >> $GITHUB_OUTPUT
 
   go-test:
     runs-on: ubuntu-latest
