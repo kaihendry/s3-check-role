@@ -65,7 +65,3 @@ resource "aws_s3_object" "test_file_bar" {
     Description = "Test file in bar prefix for access validation"
   }
 }
-
-output "bucket_name" {
-  value = aws_s3_bucket.secure_bucket.bucket
-}
