@@ -2,12 +2,13 @@ name: Terraform and Tests
 
 on: ["push"]
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   terraform:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
     outputs:
       s3_alias: ${{ steps.get_tf_alias_output.outputs.ALIAS }}
     steps:
