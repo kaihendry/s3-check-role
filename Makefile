@@ -8,7 +8,6 @@ PRODUCT = aptest
 
 apply: .terraform fmt
 	terraform apply -auto-approve
-	aws s3 ls --recursive s3://$(shell terraform output -raw bucket_name)/
 
 fmt:
 	terraform fmt
