@@ -16,6 +16,7 @@ jobs:
         with:
             role-to-assume: arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ
             aws-region: eu-west-2
+      - uses: hashicorp/setup-terraform@v2
       - run: make
       - name: Get S3 Access Point Alias from Terraform output
         id: get_tf_alias_output
