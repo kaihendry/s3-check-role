@@ -10,7 +10,7 @@ jobs:
   terraform:
     runs-on: ubuntu-latest
     outputs:
-      s3_alias: ${{ steps.get_tf_alias_output.outputs.ALIAS }}
+      alias: ${{ steps.get_alias.outputs.ALIAS }}
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
@@ -19,8 +19,7 @@ jobs:
             aws-region: eu-west-2
       - uses: hashicorp/setup-terraform@v2
       - run: make
-      - name: Get S3 Access Point Alias from Terraform output
-        id: get_tf_alias_output
+      - id: get_alias
         run: | 
           ALIAS=$(aws s3control get-access-point --name s3-check-role-2025-ap --account-id 407461997746 | jq -r .Alias)
           echo "ALIAS=$ALIAS" >> $GITHUB_ENV
@@ -28,27 +27,22 @@ jobs:
   go-test:
     runs-on: ubuntu-latest
     needs: terraform
-    env:
-      AP_ALIAS: ${{ needs.terraform.outputs.s3_alias }}
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
         with:
             role-to-assume: arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ
             aws-region: eu-west-2
-      - name: Echo S3 Access Point Alias (from Terraform output)
-        run: |
-          echo "S3 Access Point Alias used in Go test: $AP_ALIAS"
       - uses: actions/setup-go@v5
       - name: test
         working-directory: go
         run: go test ./...
+        env:
+          AP_ALIAS: ${{ needs.terraform.outputs.alias }}
 
   python-test:
     runs-on: ubuntu-latest
     needs: terraform
-    env:
-      AP_ALIAS: ${{ needs.terraform.outputs.s3_alias }}
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
@@ -56,12 +50,11 @@ jobs:
             role-to-assume: arn:aws:iam::407461997746:role/github-actions-Role-56IHHM969DKJ
             aws-region: eu-west-2
       - uses: astral-sh/setup-uv@v6
-      - name: Echo S3 Access Point Alias (from Terraform output)
-        run: |
-          echo "S3 Access Point Alias used in Python test: $AP_ALIAS"
       - name: Lint
         working-directory: py
         run: uvx ruff check
       - name: Test
         working-directory: py
         run: uv run test_bucket_policy.py -k .
+        env:
+          AP_ALIAS: ${{ needs.terraform.outputs.alias }}
