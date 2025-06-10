@@ -9,7 +9,7 @@ jobs:
       id-token: write
       contents: read
     outputs:
-      s3_alias: ${{ steps.get_tf_alias_output.outputs.alias_value }}
+      s3_alias: ${{ steps.get_tf_alias_output.outputs.ALIAS }}
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
@@ -20,7 +20,9 @@ jobs:
       - run: make
       - name: Get S3 Access Point Alias from Terraform output
         id: get_tf_alias_output
-        run: echo "alias_value=$(terraform output -raw secure_bucket_access_point_alias)" >> $GITHUB_OUTPUT
+        run: | 
+          ALIAS=$(aws s3control get-access-point --name s3-check-role-2025-ap --account-id 407461997746 | jq -r .Alias)
+          echo "ALIAS=$ALIAS" >> $GITHUB_ENV
 
   go-test:
     runs-on: ubuntu-latest
